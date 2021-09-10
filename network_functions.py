@@ -224,7 +224,7 @@ class MRF:
   
                 # update MSA 
                 if self.p["msa_memory"] != False:
-                    if p["pid_thresh"]<1.0:
+                    if p["pid_thresh"]<=1.0 and p["pid_thresh"]>0:
                         pid  = jnp.einsum('nla,la->n', x_msa, x_msa[0,...])/ x_msa.shape[1]
                         x_msa_restricted = jnp.einsum('nia,n->nia',x_msa, (pid > p["pid_thresh"]))
                         num_surviving_seqs = (pid > p["pid_thresh"]).sum() + 1
@@ -428,7 +428,7 @@ class BasicAlign:
       
             # compute MSA 
             if self.p["double_aln"] != False:
-                if p["pid_thresh"]<1.0:
+                if p["pid_thresh"]<=1.0:
                     pid  = jnp.einsum('nla,la->n', x_msa, x_msa[0,...])/ x_msa.shape[1]
                     x_msa_restricted = jnp.einsum('nia,n->nia',x_msa, (pid > p["pid_thresh"]))
                     num_surviving_seqs = (pid > p["pid_thresh"]).sum() +1
