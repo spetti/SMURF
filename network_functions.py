@@ -105,7 +105,7 @@ class MRF:
                nat_aln=None, use_nat_aln=False, add_aln_loss=False, aln_lam=1.0,
                seed=None, lr=0.1, norm_mode="fast",
                learn_bias=True, w_scale=0.1, 
-               msa_memory = False, align_to_msa_frac = 0.0, pid_thresh = 1.0):
+               msa_memory = False, align_to_msa_frac = 0.0, pid_thresh = 1.0, pseudo = False):
 
         N,L,A = X.shape
 
@@ -135,7 +135,7 @@ class MRF:
                   "use_nat_aln":use_nat_aln, "add_aln_loss":add_aln_loss, "aln_lam":aln_lam,
                   "norm_mode":norm_mode,
                   "learn_bias":learn_bias,"w_scale":w_scale, "msa_memory":msa_memory, 
-                  "align_to_msa_frac":align_to_msa_frac, "pid_thresh":pid_thresh}
+                  "align_to_msa_frac":align_to_msa_frac, "pid_thresh":pid_thresh, "pseudo":pseudo}
 
         # initialize model
         self.init_params, self.model = self._get_model()
@@ -192,6 +192,7 @@ class MRF:
 
             if p["use_nat_aln"]:
                 aln = p_aln = inputs["aln"]
+                
             else:
             # concatentate reference, get positional embedding
                 x_ms_in_ = jnp.concatenate([inputs["x_ref"], x_ms_in],0)
@@ -213,12 +214,15 @@ class MRF:
                 # normalize rows/cols (to remove edge effects due to 1D-convolution)
                 sm_mtx = norm_row_col(sm_mtx, sm_mask, p["norm_mode"])
                 
-                sm_open = params["open"] if p["sw_learn_gap"] else laxy.freeze(params["open"])
-                sm_gap = params["gap"] if p["sw_learn_gap"] else laxy.freeze(params["gap"])
-                sm_temp = params["temp"] if p["sw_learn_temp"] else laxy.freeze(params["temp"])
                 
-
-                aln = get_aln(sm_mtx, lengths, gap=sm_gap, open=sm_open, temp=sm_temp, key=inputs["key"][1])
+                if p["pseudo"]:
+                    aln = jnp.sqrt(jax.nn.softmax(sm_mtx, axis=-1) * jax.nn.softmax(sm_mtx, axis=-2))
+                else:
+                    sm_open = params["open"] if p["sw_learn_gap"] else laxy.freeze(params["open"])
+                    sm_gap = params["gap"] if p["sw_learn_gap"] else laxy.freeze(params["gap"])
+                    sm_temp = params["temp"] if p["sw_learn_temp"] else laxy.freeze(params["temp"])
+                    aln = get_aln(sm_mtx, lengths, gap=sm_gap, open=sm_open, temp=sm_temp, key=inputs["key"][1])
+                    
                 x_msa = jnp.einsum("nia,nij->nja", x_ms_in, aln)
                 x_msa_bias = x_msa.mean(0)
   
@@ -339,7 +343,7 @@ class BasicAlign:
                sw_open=None, sw_gap=None, sw_learn_gap=False,
                sw_restrict=False,
                seed=None, lr=0.1, norm_mode="fast", 
-               w_scale=0.1, double_aln = False, double_frac = 0.0, pid_thresh = 1.0, supervise = False, nat_aln = None):
+               w_scale=0.1, double_aln = False, double_frac = 0.0, pid_thresh = 1.0, supervise = False, nat_aln = None, pseudo= False):
     
         N,L,A = X.shape
 
@@ -357,7 +361,7 @@ class BasicAlign:
                   "sw_open":sw_open,"sw_gap":float(sw_gap),"sw_learn_gap":sw_learn_gap,
                    "filters":filters, "win":win,
                   "norm_mode":norm_mode,"w_scale":w_scale, "double_frac":double_frac, 
-                  "double_aln":double_aln, "pid_thresh":pid_thresh, "supervise":supervise}
+                  "double_aln":double_aln, "pid_thresh":pid_thresh, "supervise":supervise, "pseudo":pseudo}
 
         # initialize model
         self.init_params, self.model = self._get_model()
@@ -412,13 +416,16 @@ class BasicAlign:
             # normalize rows/cols (to remove edge effects due to 1D-convolution)
             sm_mtx = norm_row_col(sm_mtx, sm_mask, p["norm_mode"])
             
-            #settings for smith waterman
-            sm_open = params["open"] if p["sw_learn_gap"] else laxy.freeze(params["open"])
-            sm_gap = params["gap"] if p["sw_learn_gap"] else laxy.freeze(params["gap"])
-            sm_temp = params["temp"] if p["sw_learn_temp"] else laxy.freeze(params["temp"])
-      
-            #align and compute MSA
-            aln = get_aln(sm_mtx, lengths, gap=sm_gap, open=sm_open, temp=sm_temp)
+            if p["pseudo"]:
+                aln = jnp.sqrt(jax.nn.softmax(sm_mtx, axis=-1) * jax.nn.softmax(sm_mtx, axis=-2))
+            else:
+                #settings for smith waterman
+                sm_open = params["open"] if p["sw_learn_gap"] else laxy.freeze(params["open"])
+                sm_gap = params["gap"] if p["sw_learn_gap"] else laxy.freeze(params["gap"])
+                sm_temp = params["temp"] if p["sw_learn_temp"] else laxy.freeze(params["temp"])
+
+                #align and compute MSA
+                aln = get_aln(sm_mtx, lengths, gap=sm_gap, open=sm_open, temp=sm_temp)
             
             if return_aln:
                 return aln, sm_mtx
