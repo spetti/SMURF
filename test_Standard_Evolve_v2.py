@@ -46,8 +46,12 @@ elif gradual == "no":
     MRF_pid = [0, 0, 0, 0]
     init_align_to_msa_frac = msa_frac
     init_msa_memory = msa_memory
-
-MRF_steps = [1/4, 1/4, 1/4, 1/4]
+    
+if mode =="Standard":
+    MRF_steps = [1,0,0,0]
+else:
+    MRF_steps = [1/4, 1/4, 1/4, 1/4]
+    
 basic_steps = [1,0,0,0]
     
 
