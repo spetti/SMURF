@@ -2,11 +2,11 @@
 
 ### Source code for SSW and SMURF:
 
-laxy.py: Wrapper around JAX for basic neural networks, see https://github.com/sokrypton/laxy
+laxy.py: Wrapper around JAX for basic neural networks, see https://github.com/sokrypton/laxy.
 
 sw_functions.py: Differentiable JAX implementations of smooth Smith Waterman and Needleman Wunsch. Features affine gap and temperature parameters. 
 
-network_functions.py: SMURF pipeline including the BasicAlign and TrainMRF modules 
+network_functions.py: SMURF pipeline including the BasicAlign and TrainMRF modules.
 
 
 
@@ -18,9 +18,9 @@ run_smurf.py: Code that executes SMURF and MLM-GREMLIN. Selected hyperparameters
 
 run_smurf_w_contacts_aln.py: Code that executes SMURF and MLM-GREMLIN. Selected hyperparameters described in the comments. Outputs a one file per family that contains the predicted contacts, contact prediction AUC, and learned alignment (for SMURF only).
 
-ablation_test.py: Code that excu
+ablation_test.py: Code that executes ablations described in [citation coming soon].
 
-nw_speedtest.ipynb: Runtime comparison of our vectorized code to a naive implementation and to the "deepBLAST" implementation given in [Morton et al. 2020]
+nw_speedtest.ipynb: Runtime comparison of our vectorized code to a naive implementation and to the "deepBLAST" implementation given in [Morton et al. 2020].
 
 
 
